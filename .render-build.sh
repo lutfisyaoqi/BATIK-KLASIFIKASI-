@@ -3,9 +3,8 @@
 # This script ensures npm install runs in the backend folder where dependencies are defined
 
 echo "🔧 Starting Render build process..."
-echo "📂 Installing dependencies from backend folder..."
+echo "📂 Installing backend dependencies from root package scripts..."
 
-cd backend
-npm install
+npm run install-backend
 
 echo "✅ Build complete - backend dependencies installed"

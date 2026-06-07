@@ -7,11 +7,12 @@
   },
   "scripts": {
     "install-backend": "cd backend && npm install",
-    "start": "node backend/src/index.js",
+    "postinstall": "npm run install-backend",
+    "start": "cd backend && npm start",
     "dev": "cd backend && npm run dev",
-    "build": "bash .render-build.sh"
+    "build": "npm run install-backend"
   },
   "dependencies": {},
   "devDependencies": {},
-  "note": "Backend dependencies are managed in backend/package.json. Render uses .render-build.sh to install from backend folder."
+  "note": "Backend dependencies are managed in backend/package.json. Render uses the root build/start scripts to install and start from the backend folder."
 }
