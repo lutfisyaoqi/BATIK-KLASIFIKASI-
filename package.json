@@ -1,12 +1,17 @@
 {
   "name": "batik-klasifikasi-monorepo",
+  "description": "Fullstack Batik Classification App (Frontend + Backend + ML Service)",
   "private": true,
-  "scripts": {
-    "start": "node backend/src/index.js",
-    "dev": "nodemon backend/src/index.js"
+  "engines": {
+    "node": ">=18.0.0"
   },
-  "dependencies": {
-    "axios": "^1.16.1",
-    "dotenv": "^16.6.1"
-  }
+  "scripts": {
+    "install-backend": "cd backend && npm install",
+    "start": "node backend/src/index.js",
+    "dev": "cd backend && npm run dev",
+    "build": "bash .render-build.sh"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "note": "Backend dependencies are managed in backend/package.json. Render uses .render-build.sh to install from backend folder."
 }
