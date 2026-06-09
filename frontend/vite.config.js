@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiUrl = env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'http://127.0.0.1:5000';
+  const apiUrl = env.VITE_API_URL?.replace(/\/api\/?$/, '') || 'https://batik-klasifikasi.onrender.com';
 
   return defineConfig({
     plugins: [react()],

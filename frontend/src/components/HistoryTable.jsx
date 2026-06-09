@@ -40,10 +40,12 @@ export default function HistoryTable({ items, onClearHistory }) {
           </thead>
           <tbody>
             {items.map((item) => {
-              const confidence = item.confidence_score !== null && item.confidence_score !== undefined
-                ? (item.confidence_score * 100).toFixed(2)
+              const normalizedConfidence = item.confidence ?? item.confidence_score;
+              const confidence = normalizedConfidence != null
+                ? (normalizedConfidence * 100).toFixed(2)
                 : 'N/A';
               const confidenceColor = confidence === 'N/A' ? 'slate' : parseInt(confidence) >= 80 ? 'green' : parseInt(confidence) >= 60 ? 'amber' : 'orange';
+              const label = item.label ?? item.prediction_label ?? '—';
 
               return (
                 <tr
@@ -60,7 +62,7 @@ export default function HistoryTable({ items, onClearHistory }) {
                     })}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="badge-pill muted">{item.prediction_label || '—'}</span>
+                    <span className="badge-pill muted">{label}</span>
                   </td>
                   <td className="px-6 py-4">
                     {confidence === 'N/A' ? (

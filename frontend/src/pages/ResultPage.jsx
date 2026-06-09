@@ -24,25 +24,35 @@ export default function ResultPage() {
 
     try {
       const parsed = JSON.parse(raw);
+      const normalizedConfidence = parsed.confidence ?? parsed.confidence_score ?? null;
+      const normalizedLabel = parsed.label ?? parsed.prediction_label ?? 'Unknown';
+      const normalizedTopPredictions = Array.isArray(parsed.top_predictions) ? parsed.top_predictions : [];
+
       return {
-        label: parsed.label || parsed.prediction_label,
-        confidence: parsed.confidence || parsed.confidence_score,
-        quality: parsed.quality,
-        uncertainty: parsed.uncertainty,
-        message: parsed.message,
+        label: normalizedLabel,
+        confidence: normalizedConfidence,
+        confidence_score: normalizedConfidence,
+        quality: parsed.quality ?? 'medium',
+        uncertainty: parsed.uncertainty ?? null,
+        message: parsed.message ?? `Saya yakin ${normalizedLabel}`,
         model_version: parsed.model_version || 'v2.0',
-        image_url: parsed.image_url,
-        image: parsed.image_url, // Fallback
-        image_path: parsed.image_url, // Fallback
-        top_predictions: parsed.top_predictions || [],
+        image_url: parsed.image_url ?? parsed.image ?? parsed.image_path ?? null,
+        image: parsed.image_url ?? parsed.image ?? parsed.image_path ?? null,
+        image_path: parsed.image_url ?? parsed.image ?? parsed.image_path ?? null,
+        top_predictions: normalizedTopPredictions.map((prediction) => ({
+          ...prediction,
+          label: prediction?.label ?? prediction?.prediction ?? prediction?.prediction_label ?? prediction?.class ?? 'Unknown',
+          confidence: prediction?.confidence ?? prediction?.confidence_score ?? null,
+        })),
         created_at: parsed.created_at || new Date().toISOString(),
-        confidence_score_pct: (parsed.confidence || parsed.confidence_score || 0) * 100,
       };
     } catch (error) {
       console.error('Error decoding result:', error);
       return null;
     }
   }, [payload]);
+
+  const resultConfidence = result?.confidence_score ?? result?.confidence ?? 0;
 
   return (
     <main className="bg-gradient-to-b from-white to-slate-50 min-h-screen w-full overflow-x-hidden py-6 sm:py-8 lg:py-12 px-4 sm:px-6 lg:px-8">
@@ -117,10 +127,10 @@ export default function ResultPage() {
                   <div className="flex items-end gap-6 mt-4">
                     <div>
                       <p className="text-5xl sm:text-6xl font-black text-slate-900">
-                        {result.confidence_score != null ? Math.round(result.confidence_score * 100) : 'N/A'}%
+                        {resultConfidence != null ? Math.round(resultConfidence * 100) : 'N/A'}%
                       </p>
                       <p className="text-slate-600 mt-2 text-sm">
-                        {result.confidence_score >= 0.8 ? '✨ Sangat Yakin' : result.confidence_score >= 0.6 ? '◐ Cukup Yakin' : '⚠️ Kurang Yakin'}
+                        {resultConfidence >= 0.8 ? '✨ Sangat Yakin' : resultConfidence >= 0.6 ? '◐ Cukup Yakin' : '⚠️ Kurang Yakin'}
                       </p>
                     </div>
                   </div>
@@ -130,11 +140,11 @@ export default function ResultPage() {
                     <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
                       <div 
                         className={`h-full rounded-full transition-all duration-500 ${
-                          result.confidence_score >= 0.8 ? 'bg-gradient-to-r from-emerald-500 to-green-400' :
-                          result.confidence_score >= 0.6 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
+                          resultConfidence >= 0.8 ? 'bg-gradient-to-r from-emerald-500 to-green-400' :
+                          resultConfidence >= 0.6 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
                           'bg-gradient-to-r from-rose-500 to-red-400'
                         }`}
-                        style={{ width: `${result.confidence_score * 100}%` }}
+                        style={{ width: `${Math.min(Math.max(resultConfidence * 100, 0), 100)}%` }}
                       />
                     </div>
                     <p className="text-xs text-slate-500">Akurasi prediksi model</p>
@@ -145,11 +155,11 @@ export default function ResultPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-2xl bg-blue-50 border border-blue-200 p-4">
                     <BilingualText
-                    className="text-xs uppercase tracking-[0.24em] text-blue-600 font-semibold"
-                    translation="Model"
-                  >
-                    Model
-                  </BilingualText>
+                      className="text-xs uppercase tracking-[0.24em] text-blue-600 font-semibold"
+                      translation="Model"
+                    >
+                      Model
+                    </BilingualText>
                     <p className="mt-2 text-lg font-bold text-slate-900">{result.model_version || 'v2.0'}</p>
                   </div>
                   <div className="rounded-2xl bg-cyan-50 border border-cyan-200 p-4">
@@ -164,6 +174,22 @@ export default function ResultPage() {
                     </p>
                   </div>
                 </div>
+
+                {/* Quality and Message */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold">Kualitas Prediksi</p>
+                    <p className="mt-3 text-lg font-bold text-slate-900">{result.quality?.toUpperCase() || 'MEDIUM'}</p>
+                    <p className="mt-2 text-sm text-slate-600">Hasil kualitas batik dari model.</p>
+                  </div>
+                  <div className="rounded-2xl bg-white border border-slate-200 p-5">
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold">Message</p>
+                    <p className="mt-3 text-base text-slate-900">{result.message || 'Tidak ada pesan dari model.'}</p>
+                    {result.uncertainty != null && (
+                      <p className="mt-3 text-sm text-slate-500">Ketidakpastian: {(Number(result.uncertainty) * 100).toFixed(1)}%</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -176,14 +202,14 @@ export default function ResultPage() {
                 <p className="text-xs uppercase tracking-[0.32em] text-blue-600 font-semibold">Top Prediksi</p>
                 <div className="mt-6 space-y-4">
                   {result.top_predictions.slice(0, 3).map((pred, idx) => {
-                    const conf = pred.confidence_score != null ? pred.confidence_score : 
-                                 pred.confidence != null ? pred.confidence : 0;
+                    const conf = pred.confidence ?? pred.confidence_score ?? 0;
                     const pct = Math.round(conf * 100);
+                    const predLabel = pred.label ?? pred.prediction ?? pred.class ?? 'Unknown';
                     return (
                       <div key={idx} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <p className="text-sm sm:text-base font-semibold text-slate-800">
-                            {idx + 1}. {pred.label || pred.prediction || 'Unknown'}
+                            {idx + 1}. {predLabel}
                           </p>
                           <p className="text-sm font-bold text-slate-700">{pct}%</p>
                         </div>

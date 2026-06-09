@@ -66,14 +66,14 @@ export default function AdminDashboard({ stats = {}, isLoading = false }) {
 
   const getConfidenceText = (item) => {
     if (item == null) return '-';
-    if (item.confidence_score != null) return `${Math.round(item.confidence_score * 100)}%`;
-    if (item.confidence != null) return `${Math.round(item.confidence * 100)}%`;
-    if (item.confidence_pct != null) return (typeof item.confidence_pct === 'number') ? `${item.confidence_pct}%` : item.confidence_pct;
-    return '-';
+    const confidenceValue = item.confidence ?? item.confidence_score ?? item.confidence_pct ?? null;
+    if (confidenceValue == null) return '-';
+    if (typeof confidenceValue === 'number') return `${Math.round(confidenceValue * 100)}%`;
+    return `${confidenceValue}%`;
   };
 
   const getPredictionLabel = (item) => {
-    return item?.prediction_label || item?.label || 'Unknown';
+    return item?.label ?? item?.prediction_label ?? 'Unknown';
   };
 
   return (

@@ -51,45 +51,34 @@ export default function ImageUpload({ onResult }) {
     const formData = new FormData();
     formData.append('image', file);
 
+    const controller = new AbortController();
+    let timeoutId;
+
     try {
       const imageUrl = URL.createObjectURL(file);
       
       // Add timeout to prevent hanging requests
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
-      try {
-        const response = await api.post('/predictions', formData, {
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        // Validate response structure
-        if (!response.data) {
-          throw new Error('Invalid response from server');
-        }
-        
-        // Pass the response data with parsed fields
-        const resultData = {
-          ...response.data,
-          // Ensure we have label field for compatibility
-          label: response.data?.label || response.data?.prediction_label,
-          // Ensure we have confidence field
-          confidence: response.data?.confidence || response.data?.confidence_score,
-        };
-        
-        onResult(resultData, imageUrl);
-      } catch (timeoutError) {
-        if (timeoutError.name === 'AbortError') {
-          throw new Error('Permintaan timeout. Silakan coba lagi. / Request timeout. Please try again.');
-        }
-        throw timeoutError;
+      const response = await api.post('/predictions', formData, {
+        signal: controller.signal,
+      });
+
+      // Validate response structure
+      if (!response?.data) {
+        throw new Error('Invalid response from server');
       }
+
+      const resultData = {
+        ...response.data,
+        label: response.data?.label ?? response.data?.prediction_label,
+        confidence: response.data?.confidence ?? response.data?.confidence_score,
+      };
+
+      onResult(resultData, imageUrl);
     } catch (err) {
       console.error('Classification error:', err);
       
-      // Handle different error types
       let errorMessage = 'Gagal melakukan klasifikasi. / Failed to perform classification.';
       
       if (err.response?.data?.message) {
@@ -102,12 +91,13 @@ export default function ImageUpload({ onResult }) {
         errorMessage = 'Server sedang maintenance. Silakan coba lagi nanti. / Server is under maintenance.';
       } else if (err.message === 'Network Error') {
         errorMessage = 'Koneksi jaringan gagal. Periksa internet Anda. / Network error. Check your connection.';
-      } else if (err.message.includes('timeout')) {
+      } else if (err.message?.includes('timeout') || err.name === 'AbortError') {
         errorMessage = 'Permintaan timeout. Silakan coba lagi. / Request timeout. Please try again.';
       }
       
       setError(errorMessage);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };

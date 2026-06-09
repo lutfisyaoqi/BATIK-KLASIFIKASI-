@@ -270,7 +270,7 @@ export default function PredictionResult({ result }) {
               const s = p?.confidence != null ? Number(p.confidence) : 
                        p?.confidence_score != null ? Number(p.confidence_score) : null;
               const pct = s != null ? Math.round(s * 100) : 'N/A';
-              const predLabel = p?.label || p?.prediction || p?.class || 'Unknown';
+              const predLabel = p?.label ?? p?.prediction ?? p?.prediction_label ?? p?.class ?? 'Unknown';
               const color = s == null ? 'bg-slate-200' : (s >= 0.8 ? 'from-green-400 to-emerald-500' : s >= 0.6 ? 'from-yellow-400 to-amber-400' : 'from-rose-400 to-rose-600');
               return (
                 <div key={idx} className="flex items-center justify-between gap-3">

@@ -212,7 +212,7 @@ export default function Admin() {
               <p className="text-lg font-semibold text-white">
                 {dashboardLoading ? '...' : `${(
                   dashboardStats.latestPredictions?.length > 0
-                    ? (dashboardStats.latestPredictions.reduce((sum, item) => sum + (item.confidence_score ?? item.confidence ?? 0), 0) / dashboardStats.latestPredictions.length * 100)
+                    ? (dashboardStats.latestPredictions.reduce((sum, item) => sum + (item.confidence ?? item.confidence_score ?? 0), 0) / dashboardStats.latestPredictions.length * 100)
                     : 0
                 ).toFixed(1)}%`}
               </p>
