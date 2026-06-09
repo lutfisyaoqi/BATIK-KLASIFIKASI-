@@ -1,7 +1,7 @@
 node_modules/
 frontend/node_modules/
 ml_service/__pycache__/
-ml_service/model.h5
+
 ml_service/metrics.json
 backend/uploads/
 backend/temp_uploads/
