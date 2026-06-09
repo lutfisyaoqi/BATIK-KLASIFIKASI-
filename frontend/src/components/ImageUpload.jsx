@@ -53,10 +53,60 @@ export default function ImageUpload({ onResult }) {
 
     try {
       const imageUrl = URL.createObjectURL(file);
-      const response = await api.post('/predictions', formData);
-      onResult(response.data, imageUrl);
+      
+      // Add timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      try {
+        const response = await api.post('/predictions', formData, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        // Validate response structure
+        if (!response.data) {
+          throw new Error('Invalid response from server');
+        }
+        
+        // Pass the response data with parsed fields
+        const resultData = {
+          ...response.data,
+          // Ensure we have label field for compatibility
+          label: response.data?.label || response.data?.prediction_label,
+          // Ensure we have confidence field
+          confidence: response.data?.confidence || response.data?.confidence_score,
+        };
+        
+        onResult(resultData, imageUrl);
+      } catch (timeoutError) {
+        if (timeoutError.name === 'AbortError') {
+          throw new Error('Permintaan timeout. Silakan coba lagi. / Request timeout. Please try again.');
+        }
+        throw timeoutError;
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal melakukan klasifikasi. / Failed to perform classification.');
+      console.error('Classification error:', err);
+      
+      // Handle different error types
+      let errorMessage = 'Gagal melakukan klasifikasi. / Failed to perform classification.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.status === 413) {
+        errorMessage = 'Gambar terlalu besar. Gunakan gambar kurang dari 10MB. / Image too large. Use image less than 10MB.';
+      } else if (err.response?.status === 400) {
+        errorMessage = 'Format gambar tidak valid. / Invalid image format.';
+      } else if (err.response?.status === 502 || err.response?.status === 503) {
+        errorMessage = 'Server sedang maintenance. Silakan coba lagi nanti. / Server is under maintenance.';
+      } else if (err.message === 'Network Error') {
+        errorMessage = 'Koneksi jaringan gagal. Periksa internet Anda. / Network error. Check your connection.';
+      } else if (err.message.includes('timeout')) {
+        errorMessage = 'Permintaan timeout. Silakan coba lagi. / Request timeout. Please try again.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

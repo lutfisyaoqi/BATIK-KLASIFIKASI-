@@ -72,6 +72,10 @@ export default function AdminDashboard({ stats = {}, isLoading = false }) {
     return '-';
   };
 
+  const getPredictionLabel = (item) => {
+    return item?.prediction_label || item?.label || 'Unknown';
+  };
+
   return (
     <>
       <style>{`
@@ -201,8 +205,9 @@ export default function AdminDashboard({ stats = {}, isLoading = false }) {
           <div className={latestClassName}>
             {mergedStats.latestPredictions
               .filter(item => {
-                if (query && !(`${item.prediction_label}`.toLowerCase().includes(query.toLowerCase()) || `${item.id}`.includes(query))) return false;
-                if (filterLabel && item.prediction_label !== filterLabel) return false;
+                const itemLabel = getPredictionLabel(item);
+                if (query && !(`${itemLabel}`.toLowerCase().includes(query.toLowerCase()) || `${item.id}`.includes(query))) return false;
+                if (filterLabel && itemLabel !== filterLabel) return false;
                 return true;
               })
               .map((item) => (
@@ -214,7 +219,7 @@ export default function AdminDashboard({ stats = {}, isLoading = false }) {
                 <img src={item.image_url || item.image || item.thumbnail} alt="thumb" className="thumbnail" />
                 <div className="ml-2 flex-1">
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="font-semibold text-slate-950 group-hover:text-slate-900 truncate">{item.prediction_label}</p>
+                    <p className="font-semibold text-slate-950 group-hover:text-slate-900 truncate">{getPredictionLabel(item)}</p>
                     <span className="badge-pill muted">Prediksi</span>
                   </div>
                   <p className="text-xs text-slate-500">

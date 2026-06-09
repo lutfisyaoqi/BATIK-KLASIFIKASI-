@@ -25,16 +25,18 @@ export default function ResultPage() {
     try {
       const parsed = JSON.parse(raw);
       return {
-        prediction_label: parsed.prediction_label,
-        confidence_score: parsed.confidence_score,
+        label: parsed.label || parsed.prediction_label,
+        confidence: parsed.confidence || parsed.confidence_score,
+        quality: parsed.quality,
+        uncertainty: parsed.uncertainty,
+        message: parsed.message,
         model_version: parsed.model_version || 'v2.0',
         image_url: parsed.image_url,
         image: parsed.image_url, // Fallback
         image_path: parsed.image_url, // Fallback
         top_predictions: parsed.top_predictions || [],
         created_at: parsed.created_at || new Date().toISOString(),
-        confidence: parsed.confidence_score,
-        confidence_score_pct: (parsed.confidence_score * 100),
+        confidence_score_pct: (parsed.confidence || parsed.confidence_score || 0) * 100,
       };
     } catch (error) {
       console.error('Error decoding result:', error);
@@ -70,7 +72,7 @@ export default function ResultPage() {
                 Hasil Klasifikasi Dibagikan
               </BilingualText>
               <h1 className="mt-4 text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight">
-                {result.prediction_label}
+                {result?.label || 'Unknown'}
               </h1>
               <BilingualText
                 className="mt-4 text-base sm:text-lg text-slate-700"
@@ -88,7 +90,7 @@ export default function ResultPage() {
                   {result.image_url ? (
                     <img 
                       src={result.image_url} 
-                      alt={result.prediction_label} 
+                      alt={result?.label || 'Unknown'} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="16" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle"%3EGambar tidak dapat dimuat%3C/text%3E%3C/svg%3E';
@@ -166,7 +168,7 @@ export default function ResultPage() {
             </div>
 
             {/* Batik Culture Detail Section */}
-            <BatikCultureDetail batikName={result.prediction_label} />
+            <BatikCultureDetail batikName={result?.label || 'Unknown'} />
 
             {/* Top Predictions */}
             {result.top_predictions && result.top_predictions.length > 0 && (

@@ -57,28 +57,25 @@ export default function PredictionResult({ result }) {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  const getScore = (r) => {
-    if (!r) return null;
-    if (r.confidence_score != null) return Number(r.confidence_score);
-    if (r.confidence != null) return Number(r.confidence);
-    if (r.confidence_score_pct != null) return Number(r.confidence_score_pct) / 100;
-    return null;
-  };
-
-  const score = getScore(result);
+  // Parse confidence from backend response (0-1 format)
+  const score = result?.confidence != null ? Number(result.confidence) : null;
   const confidence = score != null ? (score * 100).toFixed(2) : 'N/A';
   const isHighConfidence = score != null && score >= 0.8;
   const isMediumConfidence = score != null && score >= 0.6;
 
-  const getConfidenceColor = () => {
-    if (isHighConfidence) return 'from-green-500 to-emerald-500';
-    if (isMediumConfidence) return 'from-yellow-500 to-amber-500';
-    return 'from-red-500 to-rose-500';
-  };
+  // Get label from backend (primary field name)
+  const label = result?.label || result?.prediction_label || 'Unknown';
+  
+  // Get quality and uncertainty from backend
+  const quality = result?.quality || 'medium';
+  const uncertainty = result?.uncertainty != null ? (Number(result.uncertainty) * 100).toFixed(1) : 'N/A';
+  
+  // Get message from backend or generate fallback
+  const message = result?.message || `Prediksi: ${label}`;
 
-  const modelVersion = result.model_version || result.modelVersion || 'v2.0';
-  const inferenceTime = result.inference_time ?? result.prediction_time ?? result.latency ?? null;
-  const imageUrl = result.image_url || result.image || result.image_path || null;
+  const modelVersion = result?.model_version || result?.modelVersion || 'v2.0';
+  const inferenceTime = result?.inference_time ?? result?.prediction_time ?? result?.latency ?? null;
+  const imageUrl = result?.image_url || result?.image || result?.image_path || null;
 
   const getConfidenceLabel = () => {
     if (isHighConfidence) return 'Sangat Yakin';
@@ -94,7 +91,22 @@ export default function PredictionResult({ result }) {
     return 'N/A';
   };
 
+  const getQualityColor = () => {
+    switch (quality?.toLowerCase()) {
+      case 'high':
+        return 'from-emerald-500 to-green-500';
+      case 'medium':
+        return 'from-amber-500 to-yellow-500';
+      case 'low':
+        return 'from-orange-500 to-rose-500';
+      default:
+        return 'from-slate-400 to-slate-500';
+    }
+  };
+
   const confidenceBadgeColor = score == null ? 'bg-slate-100 text-slate-600' : isHighConfidence ? 'bg-emerald-100 text-emerald-700' : isMediumConfidence ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
+
+  const qualityBadgeColor = quality === 'high' ? 'bg-emerald-100 text-emerald-700' : quality === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
 
   // Action handlers
   const handleOpenImage = () => {
@@ -105,7 +117,7 @@ export default function PredictionResult({ result }) {
   };
 
   const handleDownloadImage = async () => {
-    const imageUrl = result.image_url || result.image || result.image_path;
+    const imageUrl = result?.image_url || result?.image || result?.image_path;
     if (!imageUrl) {
       showToast('Gambar tidak tersedia untuk diunduh / Image unavailable for download', 'error');
       return;
@@ -129,7 +141,7 @@ export default function PredictionResult({ result }) {
       const link = document.createElement('a');
       link.href = downloadUrl;
       const fileExt = imageUrl.split('.').pop().split('?')[0] || 'jpg';
-      link.download = `batik-${result.prediction_label}-${Date.now()}.${fileExt}`;
+      link.download = `batik-${label}-${Date.now()}.${fileExt}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -144,7 +156,7 @@ export default function PredictionResult({ result }) {
   const handleCopyLink = async () => {
     try {
       // Validasi image_url tersedia
-      const imageUrl = result.image_url || result.image || result.image_path;
+      const imageUrl = result?.image_url || result?.image || result?.image_path;
       
       if (!imageUrl) {
         showToast('Gambar tidak tersedia untuk dibagikan / Image unavailable to share', 'error');
@@ -153,12 +165,15 @@ export default function PredictionResult({ result }) {
 
       // Struktur payload yang akan di-share
       const payload = {
-        prediction_label: result.prediction_label || 'Tidak Terdeteksi',
-        confidence_score: score,
+        label: label,
+        confidence: score,
         model_version: modelVersion,
         image_url: imageUrl,
-        top_predictions: result.top_predictions || [],
-        created_at: result.created_at || new Date().toISOString(),
+        quality: quality,
+        uncertainty: uncertainty,
+        message: message,
+        top_predictions: result?.top_predictions || [],
+        created_at: result?.created_at || new Date().toISOString(),
       };
       
       // Generate share URL
@@ -184,7 +199,7 @@ export default function PredictionResult({ result }) {
             >
               Hasil Klasifikasi
             </BilingualText>
-            <h3 className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-950 leading-tight break-words">{result.prediction_label}</h3>
+            <h3 className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-950 leading-tight break-words">{label}</h3>
           </div>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${confidenceBadgeColor}`}>{getConfidenceLabel()}</span>
         </div>
@@ -194,10 +209,20 @@ export default function PredictionResult({ result }) {
         >
           Motif batik Sumatera Selatan
         </BilingualText>
+        
+        {/* Message from backend */}
+        {message && (
+          <div className="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
+            <p className="text-sm text-blue-900">{message}</p>
+          </div>
+        )}
+        
         <div className="mt-4 flex flex-wrap gap-3 text-xs sm:text-sm text-slate-600">
           <span className="rounded-full bg-slate-100 px-3 py-2">Model: {modelVersion}</span>
           {inferenceTime != null && <span className="rounded-full bg-slate-100 px-3 py-2">Latensi: {inferenceTime} ms</span>}
           <span className="rounded-full bg-slate-100 px-3 py-2">Kepercayaan: {confidence}%</span>
+          <span className={`rounded-full px-3 py-2 font-semibold ${qualityBadgeColor}`}>Kualitas: {quality?.toUpperCase()}</span>
+          {uncertainty !== 'N/A' && <span className="rounded-full bg-slate-100 px-3 py-2">Ketidakpastian: {uncertainty}%</span>}
         </div>
       </div>
 
@@ -228,10 +253,10 @@ export default function PredictionResult({ result }) {
       </div>
 
       {/* Batik Culture Detail Section */}
-      <BatikCultureDetail batikName={result.prediction_label} />
+      <BatikCultureDetail batikName={label} />
 
       {/* Top predictions */}
-      {result.top_predictions && result.top_predictions.length > 0 && (
+      {result?.top_predictions && result.top_predictions.length > 0 && (
         <div className="card-shell surface p-5 sm:p-6 shadow-lg">
           <BilingualText
             className="text-xs uppercase tracking-[0.32em] text-slate-500 font-semibold"
@@ -241,13 +266,16 @@ export default function PredictionResult({ result }) {
           </BilingualText>
           <div className="mt-3 space-y-3">
             {result.top_predictions.slice(0, 3).map((p, idx) => {
-              const s = getScore(p) ?? (p.confidence != null ? Number(p.confidence) : null);
+              // Parse confidence from top_predictions (could be different field names)
+              const s = p?.confidence != null ? Number(p.confidence) : 
+                       p?.confidence_score != null ? Number(p.confidence_score) : null;
               const pct = s != null ? Math.round(s * 100) : 'N/A';
+              const predLabel = p?.label || p?.prediction || p?.class || 'Unknown';
               const color = s == null ? 'bg-slate-200' : (s >= 0.8 ? 'from-green-400 to-emerald-500' : s >= 0.6 ? 'from-yellow-400 to-amber-400' : 'from-rose-400 to-rose-600');
               return (
                 <div key={idx} className="flex items-center justify-between gap-3">
                   <div className="flex-1">
-                    <p className="font-medium text-slate-900 truncate">{p.label || p.prediction || p.class || 'Unknown'}</p>
+                    <p className="font-medium text-slate-900 truncate">{predLabel}</p>
                     <div className="mt-2 h-2 w-full rounded-full bg-slate-100 overflow-hidden">
                       <div className={`h-full rounded-full ${s != null ? 'bg-gradient-to-r ' + color : 'bg-slate-200'}`} style={{ width: s != null ? `${pct}%` : '6%' }} />
                     </div>
@@ -285,7 +313,7 @@ export default function PredictionResult({ result }) {
             {imageUrl ? (
               <img
                 src={imageUrl}
-                alt={result.prediction_label}
+                alt={label}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"%3E%3Crect fill="%23f3f4f6" width="400" height="400"/%3E%3Ctext x="50%25" y="50%25" font-size="16" fill="%239ca3af" text-anchor="middle" dominant-baseline="middle"%3EGambar tidak dapat dimuat%3C/text%3E%3C/svg%3E';
@@ -475,15 +503,15 @@ export default function PredictionResult({ result }) {
             <BilingualText
               as="p"
               className="text-sm font-semibold text-slate-950 mb-2"
-              translation={`About Batik ${result.prediction_label}`}
+              translation={`About Batik ${label}`}
             >
-              Tentang Batik {result.prediction_label}
+              Tentang Batik {label}
             </BilingualText>
             <BilingualText
               className="text-sm leading-relaxed text-slate-600"
-              translation={`Batik ${result.prediction_label} is a traditional South Sumatra batik motif rich in cultural meaning. It is commonly used in regional batik crafts and carries a distinctive traditional pattern.`}
+              translation={`Batik ${label} is a traditional South Sumatra batik motif rich in cultural meaning. It is commonly used in regional batik crafts and carries a distinctive traditional pattern.`}
             >
-              Batik {result.prediction_label} merupakan motif tradisional Sumatera Selatan yang kaya akan makna budaya. Motif ini umumnya digunakan dalam kerajinan batik daerah dan memiliki ciri khas pola tradisional yang estetis.
+              Batik {label} merupakan motif tradisional Sumatera Selatan yang kaya akan makna budaya. Motif ini umumnya digunakan dalam kerajinan batik daerah dan memiliki ciri khas pola tradisional yang estetis.
             </BilingualText>
           </div>
         </div>
