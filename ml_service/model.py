@@ -1,7 +1,6 @@
 import os
 import json
 import numpy as np
-import albumentations as A
 from pathlib import Path
 from tensorflow.keras import layers, models, callbacks
 from tensorflow.keras.optimizers import Adam
@@ -152,6 +151,11 @@ def build_generators(dataset_path):
 
     if total_images == 0:
         raise FileNotFoundError(f'Tidak ada gambar di {train_dir}. Silakan upload dataset terlebih dahulu.')
+
+    try:
+        import albumentations as A
+    except ImportError as exc:
+        raise ImportError('albumentations is required for training/augmentation. Install it or run in an environment where training is supported. Original error: ' + str(exc))
 
     augmentation = A.Compose([
         A.OneOf([

@@ -2,8 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const datasetRoutes = require('./routes/dataset');
-const authRoutes = require('./routes/auth'); // Asumsi ada route untuk auth
+const datasetRoutes = require('./src/routes/dataset');
+const authRoutes = require('./src/routes/auth'); // Asumsi ada route untuk auth
 const predictionRoutes = require('./routes/prediction'); // Import prediction routes
 const db = require('./models'); // Import database connection
 

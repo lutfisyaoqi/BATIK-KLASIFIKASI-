@@ -1,11 +1,20 @@
 const axios = require('axios');
 
 const normalizeMlServiceUrl = (rawUrl) => {
-  const url = (rawUrl || 'http://127.0.0.1:8000').trim().replace(/\/$/, '');
+  if (!rawUrl) {
+    return 'http://127.0.0.1:8000';
+  }
+  const url = rawUrl.trim().replace(/\/$/, '');
   return url.replace(/^http:\/\/localhost(?::(\d+))?/, 'http://127.0.0.1$1');
 };
 
-const mlEndpoint = normalizeMlServiceUrl(process.env.ML_SERVICE_URL);
+const mlEndpoint = normalizeMlServiceUrl(
+  process.env.ML_SERVICE_URL || process.env.HF_SPACES_URL || process.env.HUGGING_FACE_URL
+);
+
+console.log('================================');
+console.log('ML SERVICE ENDPOINT:', mlEndpoint);
+console.log('================================');
 
 async function sendToMlService(imagePath) {
   const formData = new (require('form-data'))();

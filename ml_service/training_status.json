@@ -3,8 +3,8 @@
   "progress": 100,
   "log": "Training selesai.",
   "details": {
-    "accuracy": 0.6944444179534912,
-    "loss": 1.1645703315734863,
+    "accuracy": 0.7777777910232544,
+    "loss": 0.912321925163269,
     "epochs_trained": 10,
     "classes": [
       "BINTIK TUJUH",
@@ -15,6 +15,6 @@
       "PUCUK PAKIS DAN FLORA LOKAL",
       "PUCUK REBUNG"
     ],
-    "timestamp": "1780645443.9976482"
+    "timestamp": "1780846468.7324069"
   }
 }

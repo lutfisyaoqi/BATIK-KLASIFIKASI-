@@ -13,7 +13,7 @@ $rootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 # Open PowerShell windows for each service
 Write-Host ""
 Write-Host "Starting ML Service..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$rootDir\ml_service'; `$env:PYTHONUNBUFFERED=1; & '.\venv\Scripts\python.exe' -m uvicorn app:app --reload --host 127.0.0.1 --port 8000"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$rootDir\ml_service'; `$env:PYTHONUNBUFFERED=1; & '.\venv\Scripts\python.exe' -m uvicorn ml_service.app:app --reload --host 127.0.0.1 --port 8000"
 
 Start-Sleep -Seconds 2
 

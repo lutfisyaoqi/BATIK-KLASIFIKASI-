@@ -6,8 +6,16 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from sklearn.metrics.pairwise import cosine_similarity
-import cv2
-from PIL import Image
+
+# Lazy-import OpenCV with graceful fallback for headless environments
+try:
+    import cv2
+    _CV2_AVAILABLE = True
+except Exception as _cv2_err:
+    cv2 = None
+    _CV2_AVAILABLE = False
+
+from PIL import Image as PILImage
 import logging
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
@@ -17,10 +25,24 @@ warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+def rgba_to_rgb_with_pil(img_array: np.ndarray) -> np.ndarray:
+    """Convert RGBA numpy array to RGB using PIL fallback."""
+    pil = PILImage.fromarray(img_array.astype('uint8'), 'RGBA').convert('RGB')
+    return np.array(pil)
+
+
 class AdvancedBatikInference:
     def __init__(self, model_path='model.h5', labels_path='labels.json'):
+        self.base_dir = Path(__file__).resolve().parent
         self.model_path = Path(model_path)
         self.labels_path = Path(labels_path)
+
+        if not self.model_path.is_absolute():
+            self.model_path = self.base_dir / self.model_path
+        if not self.labels_path.is_absolute():
+            self.labels_path = self.base_dir / self.labels_path
+
         self.image_size = (180, 180)  # Match training size
 
         # Load model and labels
@@ -74,7 +96,16 @@ class AdvancedBatikInference:
             logger.warning(f"⚠️  Could not setup feature extractor: {e}")
 
     def enhance_image(self, img_array: np.ndarray) -> np.ndarray:
-        """Improve contrast and sharpness for blurry or low-quality inputs."""
+        """Improve contrast and sharpness for blurry or low-quality inputs.
+
+        If OpenCV is not available (headless environment), this function falls back
+        to returning the original image after logging a warning. This keeps the
+        pipeline robust on servers where GUI/OpenGL libs are not present.
+        """
+        if not _CV2_AVAILABLE:
+            logger.warning("OpenCV not available — skipping enhancement.")
+            return img_array
+
         try:
             image_rgb = img_array.astype(np.uint8)
             lab = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2LAB)
@@ -94,13 +125,16 @@ class AdvancedBatikInference:
     def preprocess_image(self, image_path: str) -> Optional[np.ndarray]:
         """Advanced image preprocessing"""
         try:
-            # Load image and resize to model input
+            # Load image and resize to model input using Keras loader
             img = image.load_img(image_path, target_size=self.image_size)
             img_array = image.img_to_array(img)
 
-            # Convert to RGB if needed
+            # Convert to RGB if needed (RGBA -> RGB)
             if img_array.shape[-1] == 4:  # RGBA
-                img_array = cv2.cvtColor(img_array.astype(np.uint8), cv2.COLOR_RGBA2RGB)
+                if _CV2_AVAILABLE:
+                    img_array = cv2.cvtColor(img_array.astype(np.uint8), cv2.COLOR_RGBA2RGB)
+                else:
+                    img_array = rgba_to_rgb_with_pil(img_array)
 
             # Enhance image quality for blurred or low-contrast inputs
             img_array = self.enhance_image(img_array)
@@ -334,8 +368,8 @@ class AdvancedBatikInference:
             }
 
             # Save to predictions log in a consistent location
-            log_file = Path('models/prediction_log.jsonl')
-            log_file.parent.mkdir(exist_ok=True)
+            log_file = self.base_dir / 'models' / 'prediction_log.jsonl'
+            log_file.parent.mkdir(parents=True, exist_ok=True)
 
             with open(log_file, 'a', encoding='utf-8') as f:
                 json.dump(log_entry, f, ensure_ascii=False)
@@ -347,9 +381,9 @@ class AdvancedBatikInference:
     def get_prediction_analytics(self, limit: int = 1000) -> Dict:
         """Get prediction analytics from logs"""
         try:
-            log_file = Path('models/prediction_log.jsonl')
+            log_file = self.base_dir / 'models' / 'prediction_log.jsonl'
             if not log_file.exists():
-                log_file = Path('prediction_log.jsonl')
+                log_file = self.base_dir / 'prediction_log.jsonl'
 
             if not log_file.exists():
                 return {
@@ -397,7 +431,6 @@ class AdvancedBatikInference:
         except Exception as e:
             logger.error(f"❌ Error getting analytics: {e}")
             return {'error': str(e)}
-
 # Global inference instance
 inference_engine = None
 

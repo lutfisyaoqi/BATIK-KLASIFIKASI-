@@ -15,7 +15,9 @@ const normalizeMlServiceUrl = (rawUrl) => {
   return url.replace(/^http:\/\/localhost(?::(\d+))?/, 'http://127.0.0.1$1');
 };
 
-const DEFAULT_ML_URL = normalizeMlServiceUrl(process.env.ML_SERVICE_URL);
+const DEFAULT_ML_URL = normalizeMlServiceUrl(
+  process.env.ML_SERVICE_URL || process.env.HF_SPACES_URL || process.env.HUGGING_FACE_URL
+);
 console.log('ML SERVICE CONFIGURATION:', DEFAULT_ML_URL);
 
 /**

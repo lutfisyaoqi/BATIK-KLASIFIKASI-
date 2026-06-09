@@ -1,5 +1,4 @@
 import os
-import cv2
 import numpy as np
 from PIL import Image
 import albumentations as A
@@ -8,6 +7,14 @@ import json
 from pathlib import Path
 import shutil
 from collections import defaultdict
+
+# Lazy-import OpenCV; fallback to PIL where possible
+try:
+    import cv2
+    _CV2_AVAILABLE = True
+except Exception:
+    cv2 = None
+    _CV2_AVAILABLE = False
 
 class BatikAugmentationPipeline:
     def __init__(self, data_dir='data', target_samples_per_class=100):
@@ -93,15 +100,18 @@ class BatikAugmentationPipeline:
                 source_img = np.random.choice(source_images)
 
                 try:
-                    # Load and augment image
-                    image = cv2.imread(str(source_img))
-                    if image is None:
-                        continue
-
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    # Load and augment image using PIL fallback when cv2 not available
+                    if _CV2_AVAILABLE:
+                        image_np = cv2.imread(str(source_img))
+                        if image_np is None:
+                            continue
+                        image_np = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
+                    else:
+                        image_pil = Image.open(source_img).convert('RGB')
+                        image_np = np.array(image_pil)
 
                     # Apply augmentation
-                    augmented = self.augmentation(image=image)['image']
+                    augmented = self.augmentation(image=image_np)['image']
 
                     # Convert back to PIL and save
                     augmented_pil = Image.fromarray(augmented)

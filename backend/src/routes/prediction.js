@@ -43,20 +43,7 @@ router.post('/', upload.single('image'), async (req, res, next) => {
       });
     }
 
-    const rejectConfidence = parseFloat(process.env.REJECT_CONFIDENCE || '0.08');
     const lowConfidenceWarning = parseFloat(process.env.LOW_CONFIDENCE_WARNING || '0.35');
-
-    if (mlResponse.confidence < rejectConfidence) {
-      console.warn('[Prediction] Very low confidence image rejected:', mlResponse.confidence);
-      // Cleanup temp file
-      if (tempFilePath && existsSync(tempFilePath)) {
-        await fs.unlink(tempFilePath).catch(() => {});
-      }
-      return res.status(422).json({
-        message: 'Gambar terlalu buram atau tidak cukup jelas untuk dikenali. Silakan coba foto yang sedikit lebih fokus atau dengan pencahayaan lebih baik.',
-        confidence: mlResponse.confidence,
-      });
-    }
 
     // Upload ke Supabase Storage
     const storagePath = `predictions/${uniqueFileName}`;

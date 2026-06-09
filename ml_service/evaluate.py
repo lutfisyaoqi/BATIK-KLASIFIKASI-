@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.models import load_model
 
-from model import IMAGE_SIZE, MODEL_PATH, preprocess_input, load_labels
+from .model import IMAGE_SIZE, MODEL_PATH, preprocess_input, load_labels
 
 
 def evaluate_dataset(dataset_path: str, model_path: str, batch_size: int = 16):

@@ -14,10 +14,16 @@ from fastapi.responses import JSONResponse
 from supabase import create_client
 from dotenv import load_dotenv
 import requests
-from inference import get_inference_engine
-from evaluate import evaluate_dataset
-from explainability import generate_heatmap_overlay
-from model import train_model, MODEL_PATH
+try:
+    from .inference import get_inference_engine
+    from .evaluate import evaluate_dataset
+    from .explainability import generate_heatmap_overlay
+    from .model import train_model, MODEL_PATH, _update_training_status
+except ImportError:
+    from inference import get_inference_engine
+    from evaluate import evaluate_dataset
+    from explainability import generate_heatmap_overlay
+    from model import train_model, MODEL_PATH, _update_training_status
 
 load_dotenv()
 
@@ -243,6 +249,7 @@ async def train():
         def background_train():
             try:
                 logger.info('Background training dimulai.')
+                _update_training_status('starting', progress=0, log='Background training dimulai.')
 
                 if SUPABASE_CLIENT:
                     logger.info('Sinkronisasi dataset dari Supabase sebelum training...')
@@ -254,7 +261,12 @@ async def train():
                 metrics, labels = train_model(DATA_DIR)
                 logger.info(f'Background training selesai. Metrics: {metrics}')
             except Exception as exc:
-                logger.error('Background training error:', exc, exc_info=True)
+                error_msg = f'Background training error: {str(exc)}'
+                logger.error(error_msg, exc_info=True)
+                try:
+                    _update_training_status('failed', progress=0, log=error_msg, details={'error': str(exc)})
+                except Exception as status_exc:
+                    logger.error('Gagal memperbarui status training setelah error:', status_exc, exc_info=True)
             finally:
                 TRAINING_LOCK.release()
 

@@ -44,7 +44,7 @@ copy .env.example .env
 
 
 Edit `backend/.env` dengan konfigurasi berikut:
-- `ML_SERVICE_URL=http://127.0.0.1:8000`
+- `ML_SERVICE_URL=http://127.0.0.1:8000` atau `https://flora2121-batik-classification-api.hf.space` untuk HF Spaces deployment
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ADMIN_EMAIL`
@@ -74,7 +74,7 @@ python -m pip install -r requirements.txt
 ```powershell
 cd ml_service
 .\venv\Scripts\Activate.ps1
-python -m uvicorn app:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn ml_service.app:app --reload --host 127.0.0.1 --port 8000
 ```
 
 2. Jalankan backend:

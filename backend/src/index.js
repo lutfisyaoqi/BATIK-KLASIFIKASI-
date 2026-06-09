@@ -69,7 +69,9 @@ const normalizeMlServiceUrl = (rawUrl) => {
   return url.replace(/^http:\/\/localhost(?::(\d+))?/, 'http://127.0.0.1$1');
 };
 
-const mlServiceUrl = normalizeMlServiceUrl(process.env.ML_SERVICE_URL);
+const mlServiceUrl = normalizeMlServiceUrl(
+  process.env.ML_SERVICE_URL || process.env.HF_SPACES_URL || process.env.HUGGING_FACE_URL
+);
 console.log('ML SERVICE URL:', mlServiceUrl);
 
 app.get('/api/ml/analytics', async (req, res) => {
