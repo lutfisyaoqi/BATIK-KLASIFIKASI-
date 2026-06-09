@@ -24,5 +24,5 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 # Copy only needed files
 COPY --chown=user . /app
 
-EXPOSE 7860
-CMD ["uvicorn", "ml_service.app:app", "--host", "0.0.0.0", "--port", "7860"]
+EXPOSE 5000
+CMD ["sh", "-c", "uvicorn ml_service.app:app --host 0.0.0.0 --port ${PORT:-5000}"]

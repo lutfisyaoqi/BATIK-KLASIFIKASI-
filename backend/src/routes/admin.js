@@ -208,7 +208,7 @@ router.post('/train', async (req, res) => {
         message: 'ML Service tidak berjalan. Pastikan ML_SERVICE_URL mengarah ke service FastAPI yang tersedia.',
         detail: {
           serviceUrl: DEFAULT_ML_URL,
-          command: 'cd ml_service && python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000'
+          command: 'cd ml_service && python -m uvicorn app:app --reload --host 0.0.0.0 --port $PORT'
         },
         code: 'ECONNREFUSED'
       });
