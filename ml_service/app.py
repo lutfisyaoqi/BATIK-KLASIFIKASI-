@@ -181,7 +181,17 @@ async def predict(image: UploadFile = File(...)):
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 
+@app.get("/debug-model")
+async def debug_model():
+    engine = get_inference_engine()
 
+    return {
+        "model_path": str(engine.model_path),
+        "model_exists": engine.model_path.exists(),
+        "labels_path": str(engine.labels_path),
+        "labels_exists": engine.labels_path.exists(),
+        "model_loaded": engine.model is not None
+    }
 @app.post('/generate-heatmap')
 async def generate_heatmap(request: Request, image: UploadFile = File(...)):
     if image.content_type.split('/')[0] != 'image':
