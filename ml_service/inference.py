@@ -22,6 +22,16 @@ from typing import List, Dict, Tuple, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
+# Prefer centralized MODEL_PATH from model.py to ensure a single source of truth
+try:
+    from .model import MODEL_PATH as DEFAULT_MODEL_PATH
+except Exception:
+    # fallback for direct script execution
+    try:
+        from model import MODEL_PATH as DEFAULT_MODEL_PATH
+    except Exception:
+        DEFAULT_MODEL_PATH = None
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -33,13 +43,27 @@ def rgba_to_rgb_with_pil(img_array: np.ndarray) -> np.ndarray:
 
 
 class AdvancedBatikInference:
-    def __init__(self, model_path='model.h5', labels_path='labels.json'):
+    def __init__(self, model_path=None, labels_path=None):
         self.base_dir = Path(__file__).resolve().parent
-        self.model_path = Path(model_path)
-        self.labels_path = Path(labels_path)
+
+        # Determine model path: prefer centralized MODEL_PATH from model.py
+        if model_path is None:
+            if DEFAULT_MODEL_PATH:
+                self.model_path = Path(DEFAULT_MODEL_PATH)
+            else:
+                self.model_path = self.base_dir / 'model.h5'
+        else:
+            self.model_path = Path(model_path)
 
         if not self.model_path.is_absolute():
             self.model_path = self.base_dir / self.model_path
+
+        # Determine labels path
+        if labels_path is None:
+            self.labels_path = self.base_dir / 'labels.json'
+        else:
+            self.labels_path = Path(labels_path)
+
         if not self.labels_path.is_absolute():
             self.labels_path = self.base_dir / self.labels_path
 
