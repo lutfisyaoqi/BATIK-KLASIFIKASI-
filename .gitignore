@@ -9,3 +9,10 @@ backend/temp_uploads/
 .vscode/
 .DS_Store
 .env
+
+# Frontend build output
+frontend/dist/
+
+# Vercel deploy metadata and ignored local project files
+.vercel/
+.vercelignore
