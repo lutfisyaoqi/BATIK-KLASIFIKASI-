@@ -11,7 +11,10 @@ router.use(authenticateToken, authorizeAdmin);
 const DEFAULT_MODEL_VERSION = 'v2.1';
 
 const normalizeMlServiceUrl = (rawUrl) => {
-  const url = (rawUrl || 'http://127.0.0.1:8000').trim().replace(/\/$/, '');
+  if (!rawUrl) {
+    throw new Error('ML_SERVICE_URL tidak dikonfigurasi. Set environment variable ML_SERVICE_URL to the deployed FastAPI ML service URL.');
+  }
+  const url = rawUrl.trim().replace(/\/$/, '');
   return url.replace(/^http:\/\/localhost(?::(\d+))?/, 'http://127.0.0.1$1');
 };
 
@@ -202,9 +205,9 @@ router.post('/train', async (req, res) => {
     if (error.code === 'ECONNREFUSED') {
       return res.status(500).json({
         success: false,
-        message: 'ML Service tidak berjalan. Pastikan service FastAPI di folder ml_service dijalankan sebelum training.',
+        message: 'ML Service tidak berjalan. Pastikan ML_SERVICE_URL mengarah ke service FastAPI yang tersedia.',
         detail: {
-          serviceUrl: process.env.ML_SERVICE_URL || 'http://127.0.0.1:8000',
+          serviceUrl: DEFAULT_ML_URL,
           command: 'cd ml_service && python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000'
         },
         code: 'ECONNREFUSED'

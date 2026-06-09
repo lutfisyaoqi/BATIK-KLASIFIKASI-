@@ -1,10 +1,11 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
-export const ML_BASE = import.meta.env.VITE_ML_URL || `${API_BASE.replace(/\/$/, '')}/ml`;
+export const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/+$|\/$/, '') || 'https://batik-klasifikasi.onrender.com';
+export const API_ROOT = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+export const ML_BASE = import.meta.env.VITE_ML_URL || `${API_ROOT}/ml`;
 
 export const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_ROOT,
 });
 
 // Interceptor untuk menangani SEMUA request sebelum dikirim

@@ -17,7 +17,11 @@ const app = express();
 // MIDDLEWARE
 // ======================================
 app.use(cors({
-  origin: true,
+  origin: [
+    'https://batik-klasifikasi.vercel.app',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ],
   credentials: true,
 }));
 
@@ -64,15 +68,22 @@ app.use('/api/datasets', datasetRoutes);
 // ======================================
 // ML SERVICE PROXY ROUTES
 // ======================================
+const DEFAULT_ML_SERVICE_URL = 'https://flora2121-batik-classification-api.hf.space';
+
 const normalizeMlServiceUrl = (rawUrl) => {
-  const url = (rawUrl || 'http://127.0.0.1:8000').trim().replace(/\/$/, '');
+  if (!rawUrl) {
+    rawUrl = DEFAULT_ML_SERVICE_URL;
+  }
+  const url = rawUrl.trim().replace(/\/$/, '');
   return url.replace(/^http:\/\/localhost(?::(\d+))?/, 'http://127.0.0.1$1');
 };
 
 const mlServiceUrl = normalizeMlServiceUrl(
-  process.env.ML_SERVICE_URL || process.env.HF_SPACES_URL || process.env.HUGGING_FACE_URL
+  process.env.ML_SERVICE_URL || process.env.HF_SPACES_URL || process.env.HUGGING_FACE_URL || DEFAULT_ML_SERVICE_URL
 );
+console.log('================================');
 console.log('ML SERVICE URL:', mlServiceUrl);
+console.log('================================');
 
 app.get('/api/ml/analytics', async (req, res) => {
   try {

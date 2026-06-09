@@ -25,6 +25,14 @@ router.post('/', upload.single('image'), async (req, res, next) => {
       return res.status(400).json({ message: 'Gambar batik harus diunggah.' });
     }
 
+    console.log('[Prediction] Received upload:', {
+      originalName: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      fieldname: req.file.fieldname,
+    });
+    console.log('[Prediction] ML_SERVICE_URL env:', process.env.ML_SERVICE_URL || 'not set, using default HF endpoint');
+
     // Simpan ke temp file hanya untuk ML Service processing
     const uniqueFileName = `${Date.now()}-${uuidv4()}${path.extname(req.file.originalname)}`;
     tempFilePath = path.join(os.tmpdir(), uniqueFileName);
